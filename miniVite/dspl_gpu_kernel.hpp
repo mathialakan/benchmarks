@@ -1233,7 +1233,6 @@ GraphWeight distLouvainMethod(const int me, const int nprocs, const Graph &dg,
   distInitLouvain(dg, pastComm, currComm, vDegree, clusterWeight, localCinfo, 
           localCupdate, constantForSecondTerm, me);
   targetComm.resize(nv);
-
 #ifdef DEBUG_PRINTF  
   std::cout << "[" << me << "]constantForSecondTerm: " << constantForSecondTerm << std::endl;
   if (me == 0)
@@ -1264,6 +1263,7 @@ GraphWeight distLouvainMethod(const int me, const int nprocs, const Graph &dg,
   t1 = MPI_Wtime();
   std::cout << "[" << me << "]Initial communication setup time before Louvain iteration (in s): " << (t1 - t0) << std::endl;
 #endif
+//printf("pass \n"); exit(0);
  
 #ifdef OMP_GPU_ALLOC
   GraphElem *d_edge_indices = (GraphElem *)omp_target_alloc(
@@ -1294,6 +1294,17 @@ GraphWeight distLouvainMethod(const int me, const int nprocs, const Graph &dg,
       (unsigned long long)nv * sizeof(GraphWeight), -100);
   memcpy(d_clusterWeight, &clusterWeight[0], nv * sizeof(GraphWeight));
 #else
+
+  const GraphElem *d_edge_indices = &dg.edge_indices_[0];
+  const GraphElem *d_parts = &dg.parts_[0];
+  const Edge *d_edge_list = &dg.edge_list_[0];
+  GraphElem *d_currComm = &currComm[0];
+  const GraphWeight *d_vDegree = &vDegree[0];
+  GraphElem *d_targetComm = &targetComm[0];
+  Comm *d_localCinfo = &localCinfo[0];
+  Comm *d_localCupdate = &localCupdate[0];
+  GraphWeight *d_clusterWeight = &clusterWeight[0];
+/*
   const GraphElem *d_edge_indices = &dg.edge_indices_[0];
   d_edge_indices = (GraphElem *)omp_target_alloc((unsigned long long)d_edge_indices, -200);
   const GraphElem *d_parts = &dg.parts_[0];
@@ -1312,8 +1323,8 @@ GraphWeight distLouvainMethod(const int me, const int nprocs, const Graph &dg,
   d_localCupdate = (Comm *)omp_target_alloc((unsigned long long)d_localCupdate, -200);
   GraphWeight *d_clusterWeight = &clusterWeight[0];
   d_clusterWeight = (GraphWeight *)omp_target_alloc((unsigned long long)d_clusterWeight, -200);
+*/
 #endif
-
   double size = sizeof(GraphElem) *
                     (dg.edge_indices_.size() + dg.parts_.size() + 2 * nv) +
                 sizeof(Edge) * dg.edge_list_.size() +
